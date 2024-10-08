@@ -9,7 +9,6 @@ const authMiddleware = require('./controllers/authMiddleware');
 const connectDB = require('./config/db');
 const app = express();
 
-
 // Connect to database
 connectDB();
 
