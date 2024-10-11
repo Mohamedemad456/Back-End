@@ -4,7 +4,8 @@ const mongoose = require('mongoose');
 const categorySchema = new mongoose.Schema({
     name:{
         type:String,
-        required:[true,"Category is Required"]
+        required:[true,"Category is Required"],
+        enum:["To-Do","Doing","Finished"]
     }
 });
 

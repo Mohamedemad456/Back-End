@@ -6,8 +6,14 @@ const workSpace = require('../models/WorkSpaceModel');
 const priorityLevels = {
   "Low":1,
   "Medium":2,
-  "Hard":3,
+  "High":3,
   "Critical":4
+};
+
+const categoryLevels = {
+  "To-Do":1,
+  "Doing":2,
+  "Finished":3
 };
 
 const statusLevels = {
@@ -77,6 +83,9 @@ exports.getTasks = async (req, res) => {
   else{
   try {
     const Tasks = await Task.find().populate("categoryId");
+    Tasks.sort((a,b)=>{
+      return categoryLevels[a.categoryId.name - b.categoryId.name];
+    })
     return res.status(200).json(Tasks);
   } catch (error) {
     return res.status(500).json({ message: error.message });
