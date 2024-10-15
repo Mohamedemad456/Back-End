@@ -25,57 +25,63 @@ const statusLevels = {
 
 // Get all tasks
 exports.getTasks = async (req, res) => {
-  const { sortingOption, sorting } = req.body;
-  if (sortingOption) {
-    switch (sortingOption) {
-      case "priority": {
-        try {
-          const tasks = await Task.find().populate("categoryId");
+  const { filterChoice, filterOption, sortingOption, sorting } = req.body;
+  
+  try {
+    let tasks = await Task.find().populate("categoryId");
 
-          // Sort the tasks on the application side after fetching them
+    // Apply filtering if filterChoice is provided
+    if (filterChoice) {
+      switch (filterChoice) {
+        case "priority":
+          tasks = tasks.filter((task) => task.priority === filterOption);
+          break;
+        case "status":
+          tasks = tasks.filter((task) => task.status === filterOption);
+          break;
+        default:
+          return res.status(404).json({ message: "Invalid filter choice" });
+      }
+
+      // If no tasks match the filter, return a 404 response
+      if (tasks.length === 0) {
+        return res.status(404).json({ message: "No tasks found" });
+      }
+    }
+
+    // Apply sorting if sortingOption is provided
+    if (sortingOption) {
+      const sortDirection = sorting === "asc" ? 1 : -1;
+
+      switch (sortingOption) {
+        case "priority":
           tasks.sort((a, b) => {
-            const sortDirection = sorting === "asc" ? 1 : -1;
             return (
               sortDirection *
               (priorityLevels[a.priority] - priorityLevels[b.priority])
             );
           });
-
-          return res.json(tasks);
-        } catch (error) {
-          return res.status(500).json({ message: error.message });
-        }
-      }
-      case "status": {
-        try {
-          const tasks = await Task.find().populate("categoryId");
-
-          // Sort the tasks on the application side after fetching them
+          break;
+        case "status":
           tasks.sort((a, b) => {
-            const sortDirection = sorting === "asc" ? 1 : -1;
             return (
               sortDirection * (statusLevels[a.status] - statusLevels[b.status])
             );
           });
-
-          return res.json(tasks);
-        } catch (error) {
-          return res.status(500).json({ message: error.message });
-        }
+          break;
+        default:
+          return res.status(404).json({ message: "Invalid sorting choice" });
       }
     }
-  } else {
-    try {
-      const Tasks = await Task.find().populate("categoryId");
-      Tasks.sort((a, b) => {
-        return categoryLevels[a.categoryId.name - b.categoryId.name];
-      });
-      return res.status(200).json(Tasks);
-    } catch (error) {
-      return res.status(500).json({ message: error.message });
-    }
+
+    // If no filtering or sorting is applied, return the tasks as is
+    return res.status(200).json(tasks);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
+
+
 
 // Get task by id
 exports.getTaskById = async (req, res) => {
@@ -209,74 +215,5 @@ exports.deleteTask = async (req, res) => {
   }
 };
 
-exports.filterTasks = async (req, res) => {
-  const { filterChoice, filterOption } = req.body;
-  try {
-    if (filterChoice) {
-      switch (filterChoice) {
-        case "priority": {
-          try {
-            let tasks;
-          if (filterOption === "Critical") {
-            tasks = await Task.find({ priority: "Critical" }).populate(
-              "categoryId"
-            );
-          } else if (filterOption === "High") {
-            tasks = await Task.find({ priority: "High" }).populate(
-              "categoryId"
-            );
-          } else if (filterOption === "Medium") {
-            tasks = await Task.find({ priority: "Medium" }).populate(
-              "categoryId"
-            );
-          } else if (filterOption === "Low") {
-            tasks = await Task.find({ priority: "Low" }).populate("categoryId");
-          } else {
-            return re.status(404).json({ message: "Not Found" });
-          }
 
-          if(tasks.length === 0){
-            return res.status(404).json({message:"No Tasks Found"});
-          }
-          return res.status(200).json(tasks);
-          } catch (error) {
-            return res.status(500).json({message:error.message});
-          }
-          
-        }
-        case "status":{
-          try {
-            let tasks
-          if(filterOption === 'Pending'){
-            tasks = await Task.find({status:"Pending"}).populate("categoryId");
-          }else if(filterOption === 'In Progress'){
-            tasks = await Task.find({status:"In Progress"}).populate("categoryId");
-          }else if(filterOption === 'Completed'){
-            tasks = await Task.find({status:"Completed"}).populate("categoryId");
-          }else if(filterOption === 'Paused'){
-            tasks = await Task.find({status:"Paused"}).populate("categoryId");
-          }else if(filterOption === 'Finished'){
-            tasks = await Task.find({status:"Finished"}).populate("categoryId");
-          }else if(filterOption === 'Cancelled'){
-            tasks = await Task.find({status:"Cancelled"}).populate("categoryId");
-          }else{
-            return res.status(404).json({message:"Not Found"});
-          }
 
-          if(tasks.length === 0){
-            return res.status(404).json({message:"Tasks not Found"});
-          }
-          return res.status(200).json(tasks);
-          } catch (error) {
-            return res.status(500).json({message:error.message});
-          }
-        }
-
-        default:
-          break;
-      }
-    }
-  } catch (error) {
-    return res.status(500).json({message: error.message });
-  }
-};
